@@ -15,17 +15,17 @@ type State interface {
 	SetRemainingDuration(int)
 	HasStarted() bool
 	HasEnded() bool
-	IsFrozen() bool
-	SetFrozen(bool)
-	Freeze()
-	Unfreeze()
+	IsPaused() bool
+	SetPaused(bool)
+	Pause()
+	Resume()
 }
 
 type BaseState struct {
 	time     int
 	started  bool
 	ended    bool
-	frozen   bool
+	paused   bool
 	updating bool
 	self     State
 }
@@ -39,7 +39,7 @@ func (s *BaseState) Cleanup() {
 	s.time = s.self.GetDuration()
 	s.started = false
 	s.ended = false
-	s.frozen = false
+	s.paused = false
 	s.updating = false
 }
 
@@ -57,13 +57,13 @@ func (s *BaseState) Update() {
 	}
 	s.updating = true
 
-	if s.IsReadyToEnd() && !s.frozen {
+	if s.IsReadyToEnd() && !s.paused {
 		s.End()
 		s.updating = false
 		return
 	}
 
-	if !s.frozen {
+	if !s.paused {
 		s.time--
 	}
 
@@ -103,18 +103,18 @@ func (s *BaseState) HasEnded() bool {
 	return s.ended
 }
 
-func (s *BaseState) IsFrozen() bool {
-	return s.frozen
+func (s *BaseState) IsPaused() bool {
+	return s.paused
 }
 
-func (s *BaseState) SetFrozen(frozen bool) {
-	s.frozen = frozen
+func (s *BaseState) SetPaused(frozen bool) {
+	s.paused = frozen
 }
 
-func (s *BaseState) Freeze() {
-	s.SetFrozen(true)
+func (s *BaseState) Pause() {
+	s.SetPaused(true)
 }
 
-func (s *BaseState) Unfreeze() {
-	s.SetFrozen(false)
+func (s *BaseState) Resume() {
+	s.SetPaused(false)
 }
