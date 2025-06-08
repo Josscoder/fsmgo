@@ -13,12 +13,18 @@ type State interface {
 	IsReadyToEnd() bool
 	GetRemainingTime() int
 	SetRemainingTime(int)
+	GetProgress() float64
 	HasStarted() bool
 	HasEnded() bool
 	IsPaused() bool
 	SetPaused(bool)
 	Pause()
 	Resume()
+}
+
+type PauseAware interface {
+	OnPause()
+	OnResume()
 }
 
 type BaseState struct {
@@ -86,6 +92,20 @@ func (s *BaseState) SetRemainingTime(remaining int) {
 	s.time = remaining
 }
 
+func (s *BaseState) GetProgress() float64 {
+	if s.time == 0 {
+		return 1.0
+	}
+	progress := 1.0 - float64(s.time)/float64(s.time)
+	if progress < 0 {
+		return 0
+	}
+	if progress > 1 {
+		return 1
+	}
+	return progress
+}
+
 func (s *BaseState) End() {
 	if !s.started || s.ended {
 		return
@@ -108,7 +128,18 @@ func (s *BaseState) IsPaused() bool {
 }
 
 func (s *BaseState) SetPaused(frozen bool) {
+	if s.paused == frozen {
+		return
+	}
 	s.paused = frozen
+
+	if p, ok := s.self.(PauseAware); ok {
+		if frozen {
+			p.OnPause()
+		} else {
+			p.OnResume()
+		}
+	}
 }
 
 func (s *BaseState) Pause() {

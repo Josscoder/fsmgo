@@ -20,17 +20,31 @@ import "github.com/josscoder/fsmgo/state"
 ```
 
 ## Concepts
-**fsmgo** revolves around the definition of states and their composition. A state has a lifecycle with three phases:
+**fsmgo** revolves around the definition of states and their composition. A state has a lifecycle with three main phases:
 
 - `OnStart()`
 
-
 - `OnUpdate()`
-
 
 - `OnEnd()`
 
-Additionally, each state can have a duration or a custom end condition.
+Additionally, states can implement optional lifecycle hooks for pause and resume:
+
+- `OnPause()`
+
+- `OnResume()`
+
+These two methods are not required as part of the main State interface. Instead, they belong to an optional interface named PauseAware:
+
+```go
+type PauseAware interface {
+    OnPause()
+    OnResume()
+}
+```
+When a state implements PauseAware, the FSM system will automatically call `OnPause()` and `OnResume()` when appropriate. States that don't require pause/resume behavior can ignore this interface entirely.
+
+Each state can also have a duration or a custom end condition to determine when it completes.
 
 ## Examples
 Explore how to use **fsmgo** in the [example](https://github.com/Josscoder/fsmgo/tree/master/example) directory.
