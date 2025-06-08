@@ -1,6 +1,6 @@
 <div style="text-align: center;">
   <h1>
-    <img alt="fsmgo logo" src="/images/logo.png" style="max-width: 70%; height: auto;" />
+    <img alt="fsmgo logo" src="/images/logo.png" style="max-width: 50%; height: auto;" />
     <br />
     Finite State Machine for Go
   </h1>
