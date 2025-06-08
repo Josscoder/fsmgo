@@ -1,7 +1,9 @@
-<div align="center">
-	<h1><img alt="fsmgo logo" src="/images/logo.png" height="350" width="450"/><br />
-		Finite State Machine for Go
-	</h1>
+<div style="text-align: center;">
+  <h1>
+    <img alt="fsmgo logo" src="/images/logo.png" style="max-width: 70%; height: auto;" />
+    <br />
+    Finite State Machine for Go
+  </h1>
 </div>
 
 **fsmgo** is a Go library for building finite state machines in a clear, modular, and reusable way. It's inspired by [FSMgasm](https://github.com/Minikloon/FSMgasm), a Kotlin library originally designed for Minecraft minigames, but fsmgo has been adapted with Go idioms to fit naturally into concurrent architectures and complex systems.
