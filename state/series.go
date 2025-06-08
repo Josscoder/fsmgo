@@ -31,9 +31,9 @@ func (s *Series) OnUpdate() {
 	curr.Update()
 
 	readyToEnd := curr.IsReadyToEnd()
-	isFrozen := curr.IsPaused()
+	isPaused := curr.IsPaused()
 
-	if (readyToEnd && !isFrozen) || s.skipping {
+	if (readyToEnd && !isPaused) || s.skipping {
 		if s.skipping {
 			s.skipping = false
 		}

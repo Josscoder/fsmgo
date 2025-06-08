@@ -87,9 +87,9 @@ func (s *Holder) AddAll(states []State) {
 	s.states = append(s.states, states...)
 }
 
-func (s *Holder) SetPaused(frozen bool) {
+func (s *Holder) SetPaused(paused bool) {
 	for _, st := range s.states {
-		st.SetPaused(frozen)
+		st.SetPaused(paused)
 	}
-	s.BaseState.SetPaused(frozen)
+	s.BaseState.SetPaused(paused)
 }
