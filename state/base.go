@@ -11,8 +11,8 @@ type State interface {
 	End()
 	Cleanup()
 	IsReadyToEnd() bool
-	GetRemainingDuration() int
-	SetRemainingDuration(int)
+	GetRemainingTime() int
+	SetRemainingTime(int)
 	HasStarted() bool
 	HasEnded() bool
 	IsPaused() bool
@@ -72,17 +72,17 @@ func (s *BaseState) Update() {
 }
 
 func (s *BaseState) IsReadyToEnd() bool {
-	return s.ended || s.GetRemainingDuration() <= 0
+	return s.ended || s.GetRemainingTime() <= 0
 }
 
-func (s *BaseState) GetRemainingDuration() int {
+func (s *BaseState) GetRemainingTime() int {
 	if s.time < 0 {
 		return 0
 	}
 	return s.time
 }
 
-func (s *BaseState) SetRemainingDuration(remaining int) {
+func (s *BaseState) SetRemainingTime(remaining int) {
 	s.time = remaining
 }
 

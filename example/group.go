@@ -8,10 +8,10 @@ import (
 )
 
 func main() {
-	wait1 := states.NewWaitingState("1")
-	wait2 := states.NewWaitingState("2")
-
-	group := state.NewStateGroup([]state.State{wait1, wait2})
+	group := state.NewStateGroup([]state.State{
+		states.NewPrintState("State 1"),
+		states.NewPrintState("State 2"),
+	})
 	group.Start()
 
 	for !group.HasEnded() {

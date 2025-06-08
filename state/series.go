@@ -59,7 +59,11 @@ func (s *Series) OnEnd() {
 }
 
 func (s *Series) IsReadyToEnd() bool {
-	return s.Key() == len(s.states)-1 && s.Current().IsReadyToEnd()
+	curr := s.Current()
+	if curr == nil {
+		return true
+	}
+	return curr.IsReadyToEnd()
 }
 
 func (s *Series) GetDuration() int {

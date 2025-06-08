@@ -8,10 +8,10 @@ import (
 )
 
 func main() {
-	wait := states.NewWaitingState("1")
-	play := states.NewPlayingState("1")
-
-	series := state.NewStateSeries([]state.State{wait, play})
+	series := state.NewStateSeries([]state.State{
+		states.NewPrintState("State 1"),
+		states.NewPrintState("State 2"),
+	})
 	series.Start()
 
 	for !series.HasEnded() {
@@ -19,5 +19,5 @@ func main() {
 		time.Sleep(1 * time.Second)
 	}
 
-	fmt.Println("Game state series ended")
+	fmt.Println("Sequential game state series ended")
 }

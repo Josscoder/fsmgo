@@ -36,5 +36,4 @@ Additionally, each state can have a duration or a custom end condition.
 Explore how to use **fsmgo** in the [example](https://github.com/Josscoder/fsmgo/tree/master/example) directory.
 
 ## License
-**fsmgo** is licensed under the [MIT License](./LICENSE).  
-Feel free to use, modify, and distribute it in your projects.
+**fsmgo** is licensed under the [MIT License](./LICENSE). Feel free to use, modify, and distribute it in your projects.
