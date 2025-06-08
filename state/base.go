@@ -1,5 +1,9 @@
 package state
 
+import (
+	"log"
+)
+
 type State interface {
 	OnStart()
 	OnUpdate()
@@ -53,6 +57,13 @@ func (s *BaseState) Start() {
 		return
 	}
 	s.started = true
+
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("Panic recovered during Start(): %v", r)
+		}
+	}()
+
 	s.self.OnStart()
 }
 
@@ -62,9 +73,15 @@ func (s *BaseState) Update() {
 	}
 	s.updating = true
 
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("Panic recovered during Update(): %v", r)
+		}
+		s.updating = false
+	}()
+
 	if s.IsReadyToEnd() && !s.paused {
 		s.End()
-		s.updating = false
 		return
 	}
 
@@ -73,7 +90,6 @@ func (s *BaseState) Update() {
 	}
 
 	s.self.OnUpdate()
-	s.updating = false
 }
 
 func (s *BaseState) IsReadyToEnd() bool {
@@ -97,6 +113,13 @@ func (s *BaseState) End() {
 	}
 	s.ended = true
 	s.time = 0
+
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("Panic recovered during End(): %v", r)
+		}
+	}()
+
 	s.self.OnEnd()
 }
 
@@ -116,9 +139,17 @@ func (s *BaseState) SetPaused(paused bool) {
 	if s.paused == paused {
 		return
 	}
-	s.paused = paused
 
-	if p, ok := s.self.(PauseAware); ok {
+	s.paused = paused
+	p, ok := s.self.(PauseAware)
+
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("Panic recovered during pause state change: %v", r)
+		}
+	}()
+
+	if ok {
 		if paused {
 			p.OnPause()
 		} else {
