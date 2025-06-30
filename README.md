@@ -4,37 +4,34 @@
 
 <h2 align="center">Finite State Machine for Go</h2>
 
-**fsmgo** is a Go library for building finite state machines in a clear, modular, and reusable way. It's inspired by [FSMgasm](https://github.com/Minikloon/FSMgasm), a Kotlin library originally designed for Minecraft minigames, but fsmgo has been adapted with Go idioms to fit naturally into concurrent architectures and complex systems.
-
+**fsmgo** is a clean, modular, and reusable Go library for building finite state machines, inspired by [FSMgasm](https://github.com/Minikloon/FSMgasm) but adapted with Go idioms for concurrent and complex systems.
 
 ## Installation
 
-```shell
+```sh
 go get github.com/josscoder/fsmgo
 ```
 
-Import the package into your code:
+Then import:
 
 ```go
 import "github.com/josscoder/fsmgo/state"
 ```
 
 ## Concepts
-**fsmgo** revolves around the definition of states and their composition. A state has a lifecycle with three main phases:
 
-- `OnStart()`
+A **fsmgo** state has a clear lifecycle:
 
-- `OnUpdate()`
+- `OnStart()` – called when the state begins.
+- `OnUpdate()` – called every tick or cycle.
+- `OnEnd()` – called when the state ends.
 
-- `OnEnd()`
-
-Additionally, states can implement optional lifecycle hooks for pause and resume:
+Optional pause lifecycle:
 
 - `OnPause()`
-
 - `OnResume()`
 
-These two methods are not required as part of the main State interface. Instead, they belong to an optional interface named PauseAware:
+States can implement these by using the optional `PauseAware` interface:
 
 ```go
 type PauseAware interface {
@@ -42,12 +39,11 @@ type PauseAware interface {
     OnResume()
 }
 ```
-When a state implements PauseAware, the FSM system will automatically call `OnPause()` and `OnResume()` when appropriate. States that don't require pause/resume behavior can ignore this interface entirely.
 
-Each state can also have a duration or a custom end condition to determine when it completes.
+States can define a duration (`time.Duration`) or custom conditions to determine when they complete.
 
 ## Examples
-Explore how to use **fsmgo** in the [example](https://github.com/Josscoder/fsmgo/tree/master/example) directory.
+See practical examples in the [example](https://github.com/josscoder/fsmgo/tree/master/example) folder.
 
 ## License
 **fsmgo** is licensed under the [MIT License](./LICENSE). Feel free to use, modify, and distribute it in your projects.

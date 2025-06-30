@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	"log"
 	"time"
 
 	"github.com/josscoder/fsmgo/example/states"
@@ -17,18 +17,25 @@ func main() {
 		time.Sleep(1 * time.Second)
 	}
 
-	fmt.Println("Pausing...")
+	log.Println("Pausing...")
 	ps.Pause()
 
 	time.Sleep(2 * time.Second)
 
-	fmt.Println("Resuming...")
+	log.Println("Resuming...")
 	ps.Resume()
 
-	for !ps.HasEnded() {
-		ps.Update()
-		time.Sleep(1 * time.Second)
-	}
+	ticker := time.NewTicker(1 * time.Second)
+	defer ticker.Stop()
 
-	fmt.Println("State ended")
+	for {
+		select {
+		case <-ticker.C:
+			ps.Update()
+			if ps.HasEnded() {
+				log.Println("State ended")
+				return
+			}
+		}
+	}
 }

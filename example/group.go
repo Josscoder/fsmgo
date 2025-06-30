@@ -1,10 +1,11 @@
 package main
 
 import (
-	"fmt"
+	"log"
+	"time"
+
 	"github.com/josscoder/fsmgo/example/states"
 	"github.com/josscoder/fsmgo/state"
-	"time"
 )
 
 func main() {
@@ -12,12 +13,21 @@ func main() {
 		states.NewPrintState("State 1"),
 		states.NewPrintState("State 2"),
 	})
+
 	group.Start()
 
-	for !group.HasEnded() {
-		group.Update()
-		time.Sleep(1 * time.Second)
-	}
+	ticker := time.NewTicker(1 * time.Second)
+	defer ticker.Stop()
 
-	fmt.Println("All parallel states finished")
+	for {
+		select {
+		case <-ticker.C:
+			group.Update()
+
+			if group.HasEnded() {
+				log.Println("All parallel states finished")
+				return
+			}
+		}
+	}
 }

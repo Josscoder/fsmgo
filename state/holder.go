@@ -1,7 +1,9 @@
 package state
 
+import "time"
+
 type Holder struct {
-	BaseState
+	*BaseState
 	current int
 	states  []State
 }
@@ -11,85 +13,90 @@ func NewStateHolder(states []State) *Holder {
 		current: 0,
 		states:  states,
 	}
-	holder.BaseState.Init(holder)
+	holder.BaseState = NewBaseState(holder)
 	return holder
 }
 
-func (s *Holder) OnStart() {
-	if curr := s.Current(); curr != nil {
+func (h *Holder) OnStart() {
+	if curr := h.Current(); curr != nil {
 		curr.Start()
 	}
 }
 
-func (s *Holder) OnUpdate() {
-	if curr := s.Current(); curr != nil {
+func (h *Holder) OnUpdate() {
+	if curr := h.Current(); curr != nil {
 		curr.Update()
 	}
 }
 
-func (s *Holder) OnEnd() {}
+func (h *Holder) OnEnd() {}
 
-func (s *Holder) GetDuration() int {
-	if curr := s.Current(); curr != nil {
-		return curr.GetDuration()
+func (h *Holder) GetDuration() time.Duration {
+	if curr := h.Current(); curr != nil {
+		return curr.GetRemainingTime()
 	}
 	return 0
 }
 
-func (s *Holder) Current() State {
-	if s.Valid() {
-		return s.states[s.current]
+func (h *Holder) Current() State {
+	if h.Valid() {
+		return h.states[h.current]
 	}
 	return nil
 }
 
-func (s *Holder) Key() int {
-	return s.current
+func (h *Holder) Key() int {
+	return h.current
 }
 
-func (s *Holder) Previous() {
-	if curr := s.Current(); curr != nil {
+func (h *Holder) Previous() {
+	if curr := h.Current(); curr != nil {
 		curr.Cleanup()
 	}
-	s.current--
-	if s.current < 0 {
-		s.current = 0
+	h.current--
+	if h.current < 0 {
+		h.current = 0
 	}
-	if curr := s.Current(); curr != nil {
+	if curr := h.Current(); curr != nil {
 		curr.Cleanup()
 		curr.Start()
 	}
 }
 
-func (s *Holder) Next() {
-	s.current++
+func (h *Holder) Next() {
+	h.current++
 }
 
-func (s *Holder) Valid() bool {
-	return s.current >= 0 && s.current < len(s.states)
+func (h *Holder) Valid() bool {
+	return h.current >= 0 && h.current < len(h.states)
 }
 
-func (s *Holder) Rewind() {
-	s.current = 0
-	for _, st := range s.states {
+func (h *Holder) Rewind() {
+	h.current = 0
+	for _, st := range h.states {
 		st.Cleanup()
 	}
-	if curr := s.Current(); curr != nil {
+	if curr := h.Current(); curr != nil {
 		curr.Start()
 	}
 }
 
-func (s *Holder) Add(state State) {
-	s.states = append(s.states, state)
+func (h *Holder) Add(state State) {
+	h.states = append(h.states, state)
 }
 
-func (s *Holder) AddAll(states []State) {
-	s.states = append(s.states, states...)
+func (h *Holder) AddAll(states []State) {
+	h.states = append(h.states, states...)
 }
 
-func (s *Holder) SetPaused(paused bool) {
-	for _, st := range s.states {
-		st.SetPaused(paused)
+func (h *Holder) SetPaused(paused bool) {
+	for _, st := range h.states {
+		st.Pause()
 	}
-	s.BaseState.SetPaused(paused)
+	if !paused {
+		for _, st := range h.states {
+			st.Resume()
+		}
+	}
+	h.BaseState.setPaused(paused)
 }
