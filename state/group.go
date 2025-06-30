@@ -24,7 +24,14 @@ func (g *Group) OnUpdate() {
 	for _, st := range g.states {
 		st.Update()
 	}
-	if g.IsReadyToEnd() {
+	allEnded := true
+	for _, st := range g.states {
+		if !st.HasEnded() {
+			allEnded = false
+			break
+		}
+	}
+	if allEnded {
 		g.End()
 	}
 }

@@ -28,7 +28,6 @@ func (s *Series) OnStart() {
 func (s *Series) OnUpdate() {
 	curr := s.Current()
 	if curr == nil {
-		s.End()
 		return
 	}
 
@@ -66,7 +65,7 @@ func (s *Series) IsReadyToEnd() bool {
 func (s *Series) GetDuration() time.Duration {
 	var total time.Duration
 	for _, st := range s.states {
-		total += st.GetRemainingTime()
+		total += st.(Lifecycle).GetDuration()
 	}
 	return total
 }
@@ -80,7 +79,8 @@ func (s *Series) AddNext(state State) {
 	if idx >= len(s.states) {
 		s.states = append(s.states, state)
 	} else {
-		s.states = append(s.states[:idx+1], append([]State{state}, s.states[idx:]...)...)
+		s.states = append(s.states[:idx+1], s.states[idx:]...)
+		s.states[idx] = state
 	}
 }
 

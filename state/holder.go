@@ -33,7 +33,7 @@ func (h *Holder) OnEnd() {}
 
 func (h *Holder) GetDuration() time.Duration {
 	if curr := h.Current(); curr != nil {
-		return curr.GetRemainingTime()
+		return curr.(Lifecycle).GetDuration()
 	}
 	return 0
 }
@@ -91,12 +91,11 @@ func (h *Holder) AddAll(states []State) {
 
 func (h *Holder) SetPaused(paused bool) {
 	for _, st := range h.states {
-		st.Pause()
-	}
-	if !paused {
-		for _, st := range h.states {
+		if paused {
+			st.Pause()
+		} else {
 			st.Resume()
 		}
 	}
-	h.BaseState.setPaused(paused)
+	h.BaseState.SetPaused(paused)
 }
