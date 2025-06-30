@@ -41,6 +41,7 @@ type BaseState struct {
 	started   bool
 	ended     bool
 	paused    bool
+	updating  bool
 
 	mu sync.Mutex
 }
@@ -59,38 +60,64 @@ func NewBaseState(l Lifecycle) *BaseState {
 func (s *BaseState) Cleanup() {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+
 	s.remaining = s.lifecycle.GetDuration()
 	s.started = false
 	s.ended = false
 	s.paused = false
+	s.updating = false
 }
 
 func (s *BaseState) Start() {
 	s.mu.Lock()
-	defer s.mu.Unlock()
 	if s.started || s.ended {
+		s.mu.Unlock()
 		return
 	}
 	s.started = true
-	defer s.recoverPanic("Start")
+	s.mu.Unlock()
+
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("Panic recovered during Start(): %v", r)
+		}
+	}()
 	s.lifecycle.OnStart()
 }
 
 func (s *BaseState) Update() {
 	s.mu.Lock()
-	if !s.started || s.ended || s.paused {
+	if !s.started || s.ended || s.updating {
 		s.mu.Unlock()
 		return
 	}
-	if s.remaining <= 0 {
+	s.updating = true
+	s.mu.Unlock()
+
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("Panic recovered during Update(): %v", r)
+		}
+		s.mu.Lock()
+		s.updating = false
 		s.mu.Unlock()
+	}()
+
+	s.mu.Lock()
+	shouldEnd := (s.ended || s.remaining <= 0) && !s.paused
+	s.mu.Unlock()
+
+	if shouldEnd {
 		s.End()
 		return
 	}
-	s.remaining -= time.Second
+
+	s.mu.Lock()
+	if !s.paused {
+		s.remaining -= time.Second
+	}
 	s.mu.Unlock()
 
-	defer s.recoverPanic("Update")
 	s.lifecycle.OnUpdate()
 }
 
@@ -104,19 +131,23 @@ func (s *BaseState) End() {
 	s.remaining = 0
 	s.mu.Unlock()
 
-	defer s.recoverPanic("End")
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("Panic recovered during End(): %v", r)
+		}
+	}()
 	s.lifecycle.OnEnd()
 }
 
 func (s *BaseState) Pause() {
-	s.setPaused(true)
+	s.SetPaused(true)
 }
 
 func (s *BaseState) Resume() {
-	s.setPaused(false)
+	s.SetPaused(false)
 }
 
-func (s *BaseState) setPaused(paused bool) {
+func (s *BaseState) SetPaused(paused bool) {
 	s.mu.Lock()
 	if s.paused == paused {
 		s.mu.Unlock()
@@ -126,7 +157,11 @@ func (s *BaseState) setPaused(paused bool) {
 	s.mu.Unlock()
 
 	if s.pauseAware != nil {
-		defer s.recoverPanic("Pause/Resume")
+		defer func() {
+			if r := recover(); r != nil {
+				log.Printf("Panic recovered during pause state change: %v", r)
+			}
+		}()
 		if paused {
 			s.pauseAware.OnPause()
 		} else {
@@ -169,10 +204,4 @@ func (s *BaseState) IsReadyToEnd() bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return s.ended || s.remaining <= 0
-}
-
-func (s *BaseState) recoverPanic(context string) {
-	if r := recover(); r != nil {
-		log.Printf("[State] Recovered from panic in %s: %v", context, r)
-	}
 }
