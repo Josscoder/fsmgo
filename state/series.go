@@ -1,14 +1,17 @@
 package state
 
+import "time"
+
 type Series struct {
-	Holder
+	*Holder
 	skipping bool
 }
 
 func NewStateSeries(states []State) *Series {
-	s := &Series{}
-	s.states = states
-	s.BaseState.Init(s)
+	s := &Series{
+		Holder: NewStateHolder(states),
+	}
+	s.BaseState = NewBaseState(s)
 	return s
 }
 
@@ -25,22 +28,18 @@ func (s *Series) OnStart() {
 func (s *Series) OnUpdate() {
 	curr := s.Current()
 	if curr == nil {
+		s.End()
 		return
 	}
 
 	curr.Update()
 
-	readyToEnd := curr.IsReadyToEnd()
-	isPaused := curr.IsPaused()
-
-	if (readyToEnd && !isPaused) || s.skipping {
-		if s.skipping {
-			s.skipping = false
-		}
+	if (curr.IsReadyToEnd() && !curr.IsPaused()) || s.skipping {
+		s.skipping = false
 		curr.End()
 		s.Next()
 
-		if s.Key() >= len(s.states) {
+		if !s.Valid() {
 			s.End()
 			return
 		}
@@ -51,10 +50,8 @@ func (s *Series) OnUpdate() {
 }
 
 func (s *Series) OnEnd() {
-	if s.Key() < len(s.states) {
-		if curr := s.Current(); curr != nil {
-			curr.End()
-		}
+	if curr := s.Current(); curr != nil {
+		curr.End()
 	}
 }
 
@@ -66,10 +63,10 @@ func (s *Series) IsReadyToEnd() bool {
 	return curr.IsReadyToEnd()
 }
 
-func (s *Series) GetDuration() int {
-	total := 0
+func (s *Series) GetDuration() time.Duration {
+	var total time.Duration
 	for _, st := range s.states {
-		total += st.GetDuration()
+		total += st.GetRemainingTime()
 	}
 	return total
 }
@@ -83,8 +80,7 @@ func (s *Series) AddNext(state State) {
 	if idx >= len(s.states) {
 		s.states = append(s.states, state)
 	} else {
-		s.states = append(s.states[:idx+1], s.states[idx:]...)
-		s.states[idx] = state
+		s.states = append(s.states[:idx+1], append([]State{state}, s.states[idx:]...)...)
 	}
 }
 

@@ -1,10 +1,11 @@
 package main
 
 import (
-	"fmt"
+	"log"
+	"time"
+
 	"github.com/josscoder/fsmgo/example/states"
 	"github.com/josscoder/fsmgo/state"
-	"time"
 )
 
 func main() {
@@ -12,12 +13,21 @@ func main() {
 		states.NewPrintState("State 1"),
 		states.NewPrintState("State 2"),
 	})
+
 	series.Start()
 
-	for !series.HasEnded() {
-		series.Update()
-		time.Sleep(1 * time.Second)
-	}
+	ticker := time.NewTicker(1 * time.Second)
+	defer ticker.Stop()
 
-	fmt.Println("Sequential game state series ended")
+	for {
+		select {
+		case <-ticker.C:
+			series.Update()
+
+			if series.HasEnded() {
+				log.Println("Sequential state series ended")
+				return
+			}
+		}
+	}
 }

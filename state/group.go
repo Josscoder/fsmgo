@@ -1,13 +1,16 @@
 package state
 
+import "time"
+
 type Group struct {
-	Holder
+	*Holder
 }
 
 func NewStateGroup(states []State) *Group {
-	group := &Group{}
-	group.states = states
-	group.BaseState.Init(group)
+	group := &Group{
+		Holder: NewStateHolder(states),
+	}
+	group.BaseState = NewBaseState(group)
 	return group
 }
 
@@ -21,14 +24,7 @@ func (g *Group) OnUpdate() {
 	for _, st := range g.states {
 		st.Update()
 	}
-	allEnded := true
-	for _, st := range g.states {
-		if !st.HasEnded() {
-			allEnded = false
-			break
-		}
-	}
-	if allEnded {
+	if g.IsReadyToEnd() {
 		g.End()
 	}
 }
@@ -48,10 +44,10 @@ func (g *Group) IsReadyToEnd() bool {
 	return true
 }
 
-func (g *Group) GetDuration() int {
-	maxDur := 0
+func (g *Group) GetDuration() time.Duration {
+	var maxDur time.Duration
 	for _, st := range g.states {
-		d := st.GetDuration()
+		d := st.GetRemainingTime()
 		if d > maxDur {
 			maxDur = d
 		}

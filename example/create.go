@@ -1,18 +1,29 @@
 package main
 
 import (
-	"github.com/josscoder/fsmgo/example/states"
+	"log"
 	"time"
+
+	"github.com/josscoder/fsmgo/example/states"
 )
 
 func main() {
 	ps := states.NewPrintState("Hello World")
+
 	ps.Start()
 
-	for !ps.HasEnded() {
-		ps.Update()
-		time.Sleep(1 * time.Second)
-	}
+	ticker := time.NewTicker(1 * time.Second)
+	defer ticker.Stop()
 
-	ps.End()
+	for {
+		select {
+		case <-ticker.C:
+			ps.Update()
+
+			if ps.HasEnded() {
+				log.Println("State cycle completed.")
+				return
+			}
+		}
+	}
 }
