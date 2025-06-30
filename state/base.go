@@ -31,6 +31,8 @@ type PauseAware interface {
 }
 
 type BaseState struct {
+	State
+
 	time     int
 	started  bool
 	ended    bool
@@ -141,7 +143,6 @@ func (s *BaseState) SetPaused(paused bool) {
 	}
 
 	s.paused = paused
-	p, ok := s.self.(PauseAware)
 
 	defer func() {
 		if r := recover(); r != nil {
@@ -149,7 +150,7 @@ func (s *BaseState) SetPaused(paused bool) {
 		}
 	}()
 
-	if ok {
+	if p, ok := s.self.(PauseAware); ok {
 		if paused {
 			p.OnPause()
 		} else {
