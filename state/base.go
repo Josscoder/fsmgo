@@ -22,8 +22,7 @@ type State interface {
 	Start()
 	Update()
 	End()
-	Pause()
-	Resume()
+	SetPaused(bool)
 	HasStarted() bool
 	HasEnded() bool
 	IsPaused() bool
@@ -43,7 +42,7 @@ type BaseState struct {
 	paused    bool
 	updating  bool
 
-	mu sync.Mutex
+	mutex sync.Mutex
 }
 
 func NewBaseState(l Lifecycle) *BaseState {
@@ -58,8 +57,8 @@ func NewBaseState(l Lifecycle) *BaseState {
 }
 
 func (s *BaseState) Cleanup() {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
 
 	s.remaining = s.lifecycle.GetDuration()
 	s.started = false
@@ -69,13 +68,13 @@ func (s *BaseState) Cleanup() {
 }
 
 func (s *BaseState) Start() {
-	s.mu.Lock()
+	s.mutex.Lock()
 	if s.started || s.ended {
-		s.mu.Unlock()
+		s.mutex.Unlock()
 		return
 	}
 	s.started = true
-	s.mu.Unlock()
+	s.mutex.Unlock()
 
 	defer func() {
 		if r := recover(); r != nil {
@@ -86,50 +85,49 @@ func (s *BaseState) Start() {
 }
 
 func (s *BaseState) Update() {
-	s.mu.Lock()
+	s.mutex.Lock()
 	if !s.started || s.ended || s.updating {
-		s.mu.Unlock()
+		s.mutex.Unlock()
 		return
 	}
 	s.updating = true
-	s.mu.Unlock()
+	s.mutex.Unlock()
+
+	if s.IsReadyToEnd() && !s.paused {
+		s.End()
+		s.mutex.Lock()
+		s.updating = false
+		s.mutex.Unlock()
+		return
+	}
+
+	s.mutex.Lock()
+	if !s.paused {
+		s.remaining -= time.Second
+	}
+	s.mutex.Unlock()
 
 	defer func() {
 		if r := recover(); r != nil {
 			log.Printf("Panic recovered during Update(): %v", r)
 		}
-		s.mu.Lock()
+		s.mutex.Lock()
 		s.updating = false
-		s.mu.Unlock()
+		s.mutex.Unlock()
 	}()
-
-	s.mu.Lock()
-	shouldEnd := (s.ended || s.remaining <= 0) && !s.paused
-	s.mu.Unlock()
-
-	if shouldEnd {
-		s.End()
-		return
-	}
-
-	s.mu.Lock()
-	if !s.paused {
-		s.remaining -= time.Second
-	}
-	s.mu.Unlock()
 
 	s.lifecycle.OnUpdate()
 }
 
 func (s *BaseState) End() {
-	s.mu.Lock()
+	s.mutex.Lock()
 	if !s.started || s.ended {
-		s.mu.Unlock()
+		s.mutex.Unlock()
 		return
 	}
 	s.ended = true
 	s.remaining = 0
-	s.mu.Unlock()
+	s.mutex.Unlock()
 
 	defer func() {
 		if r := recover(); r != nil {
@@ -148,13 +146,13 @@ func (s *BaseState) Resume() {
 }
 
 func (s *BaseState) SetPaused(paused bool) {
-	s.mu.Lock()
+	s.mutex.Lock()
 	if s.paused == paused {
-		s.mu.Unlock()
+		s.mutex.Unlock()
 		return
 	}
 	s.paused = paused
-	s.mu.Unlock()
+	s.mutex.Unlock()
 
 	if s.pauseAware != nil {
 		defer func() {
@@ -171,37 +169,37 @@ func (s *BaseState) SetPaused(paused bool) {
 }
 
 func (s *BaseState) HasStarted() bool {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
 	return s.started
 }
 
 func (s *BaseState) HasEnded() bool {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
 	return s.ended
 }
 
 func (s *BaseState) IsPaused() bool {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
 	return s.paused
 }
 
 func (s *BaseState) GetRemainingTime() time.Duration {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
 	return s.remaining
 }
 
 func (s *BaseState) SetRemainingTime(d time.Duration) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+	s.mutex.Lock()
 	s.remaining = d
+	s.mutex.Unlock()
 }
 
 func (s *BaseState) IsReadyToEnd() bool {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
 	return s.ended || s.remaining <= 0
 }

@@ -1,6 +1,8 @@
 package state
 
-import "time"
+import (
+	"time"
+)
 
 type Holder struct {
 	*BaseState
@@ -91,11 +93,7 @@ func (h *Holder) AddAll(states []State) {
 
 func (h *Holder) SetPaused(paused bool) {
 	for _, st := range h.states {
-		if paused {
-			st.Pause()
-		} else {
-			st.Resume()
-		}
+		st.SetPaused(paused)
 	}
 	h.BaseState.SetPaused(paused)
 }
