@@ -34,7 +34,10 @@ func (s *Series) OnUpdate() {
 	curr.Update()
 
 	if (curr.IsReadyToEnd() && !curr.IsPaused()) || s.skipping {
-		s.skipping = false
+		if s.skipping {
+			s.skipping = false
+		}
+
 		curr.End()
 		s.Next()
 

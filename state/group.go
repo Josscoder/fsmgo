@@ -54,7 +54,7 @@ func (g *Group) IsReadyToEnd() bool {
 func (g *Group) GetDuration() time.Duration {
 	var maxDur time.Duration
 	for _, st := range g.states {
-		d := st.GetRemainingTime()
+		d := st.(Lifecycle).GetDuration()
 		if d > maxDur {
 			maxDur = d
 		}
