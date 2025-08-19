@@ -4,17 +4,19 @@ import "time"
 
 type ScheduledStateSeries struct {
 	*Series
-	ticker *time.Ticker
-	quitCh chan struct{}
+	ticker   *time.Ticker
+	quitCh   chan struct{}
+	interval time.Duration
 }
 
-func NewScheduledStateSeries(states []State) *ScheduledStateSeries {
+func NewScheduledStateSeries(states []State, interval time.Duration) *ScheduledStateSeries {
 	s := &ScheduledStateSeries{
-		Series: NewStateSeries(states),
-		quitCh: make(chan struct{}),
+		Series:   NewStateSeries(states),
+		quitCh:   make(chan struct{}),
+		interval: interval,
 	}
 	s.BaseState = NewBaseState(s)
-	s.ticker = time.NewTicker(time.Second)
+	s.ticker = time.NewTicker(interval)
 	return s
 }
 
@@ -25,7 +27,7 @@ func (s *ScheduledStateSeries) OnStart() {
 		for {
 			select {
 			case <-s.ticker.C:
-				s.OnUpdate()
+				s.Update()
 			case <-s.quitCh:
 				s.ticker.Stop()
 				return
