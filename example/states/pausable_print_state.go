@@ -13,9 +13,7 @@ type PausablePrintState struct {
 }
 
 func NewPausablePrintState(text string) *PausablePrintState {
-	ps := &PausablePrintState{
-		Text: text,
-	}
+	ps := &PausablePrintState{Text: text}
 	ps.BaseState = state.NewBaseState(ps)
 	return ps
 }
@@ -24,14 +22,16 @@ func (ps *PausablePrintState) OnStart() {
 	fmt.Println("Started:", ps.Text)
 }
 
-func (ps *PausablePrintState) OnUpdate() {
-	fmt.Printf("Updating: %s, remaining %v\n", ps.Text, ps.GetRemainingTime())
+func (ps *PausablePrintState) OnUpdate(delta time.Duration) {
+	fmt.Printf("Updating: %s | remaining: %v | delta: %v\n",
+		ps.Text, ps.GetRemainingTime().Round(time.Millisecond), delta)
 }
 
 func (ps *PausablePrintState) OnEnd() {
 	fmt.Println("Ended:", ps.Text)
 }
 
+// PauseAware hooks — detected automatically by BaseState.
 func (ps *PausablePrintState) OnPause() {
 	fmt.Println("Paused:", ps.Text)
 }

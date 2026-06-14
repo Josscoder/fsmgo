@@ -8,6 +8,7 @@ import (
 	"github.com/josscoder/fsmgo/state"
 )
 
+// Group runs all child states concurrently and ends when every one finishes.
 func main() {
 	group := state.NewStateGroup([]state.State{
 		states.NewPrintState("State 1"),
@@ -16,18 +17,22 @@ func main() {
 
 	group.Start()
 
-	ticker := time.NewTicker(1 * time.Second)
+	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()
 
-	for {
-		select {
-		case <-ticker.C:
-			group.Update()
+	var last time.Time
+	for t := range ticker.C {
+		delta := time.Second
+		if !last.IsZero() {
+			delta = t.Sub(last)
+		}
+		last = t
 
-			if group.HasEnded() {
-				log.Println("All parallel states finished")
-				return
-			}
+		group.Update(delta)
+
+		if group.HasEnded() {
+			log.Println("All parallel states finished.")
+			return
 		}
 	}
 }

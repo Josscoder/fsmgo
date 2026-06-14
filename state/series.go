@@ -1,9 +1,15 @@
 package state
 
-import "time"
+import (
+	"sync"
+	"time"
+)
 
+// Series plays states sequentially, advancing to the next one automatically
+// when the current state is ready to end.
 type Series struct {
 	*Holder
+	skipMu   sync.Mutex
 	skipping bool
 }
 
@@ -25,19 +31,22 @@ func (s *Series) OnStart() {
 	}
 }
 
-func (s *Series) OnUpdate() {
+func (s *Series) OnUpdate(delta time.Duration) {
 	curr := s.Current()
 	if curr == nil {
 		return
 	}
 
-	curr.Update()
+	curr.Update(delta)
 
-	if (curr.IsReadyToEnd() && !curr.IsPaused()) || s.skipping {
-		if s.skipping {
-			s.skipping = false
-		}
+	s.skipMu.Lock()
+	skip := s.skipping
+	if skip {
+		s.skipping = false
+	}
+	s.skipMu.Unlock()
 
+	if (curr.IsReadyToEnd() && !curr.IsPaused()) || skip {
 		curr.End()
 		s.Next()
 
@@ -45,8 +54,8 @@ func (s *Series) OnUpdate() {
 			s.End()
 			return
 		}
-		if newCurr := s.Current(); newCurr != nil {
-			newCurr.Start()
+		if next := s.Current(); next != nil {
+			next.Start()
 		}
 	}
 }
@@ -65,28 +74,46 @@ func (s *Series) IsReadyToEnd() bool {
 	return curr.IsReadyToEnd()
 }
 
+// GetDuration returns the sum of all child durations.
 func (s *Series) GetDuration() time.Duration {
+	s.Holder.mu.Lock()
+	states := s.states
+	s.Holder.mu.Unlock()
+
 	var total time.Duration
-	for _, st := range s.states {
-		total += st.(Lifecycle).GetDuration()
+	for _, st := range states {
+		if lc, ok := st.(Lifecycle); ok {
+			total += lc.GetDuration()
+		}
 	}
 	return total
 }
 
+// Skip requests that the current state be skipped on the next Update tick.
+// Safe to call from any goroutine.
 func (s *Series) Skip() {
+	s.skipMu.Lock()
 	s.skipping = true
+	s.skipMu.Unlock()
 }
 
+// AddNext inserts a state immediately after the current position.
 func (s *Series) AddNext(state State) {
-	idx := s.Key() + 1
+	s.Holder.mu.Lock()
+	defer s.Holder.mu.Unlock()
+
+	idx := s.current + 1
 	if idx >= len(s.states) {
 		s.states = append(s.states, state)
-	} else {
-		s.states = append(s.states[:idx+1], s.states[idx:]...)
-		s.states[idx] = state
+		return
 	}
+	// Correct insertion: grow the slice then shift elements right.
+	s.states = append(s.states, nil)
+	copy(s.states[idx+1:], s.states[idx:])
+	s.states[idx] = state
 }
 
+// AddNextList inserts multiple states after the current position, in order.
 func (s *Series) AddNextList(states []State) {
 	for _, st := range states {
 		s.AddNext(st)

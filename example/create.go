@@ -9,21 +9,24 @@ import (
 
 func main() {
 	ps := states.NewPrintState("Hello World")
-
 	ps.Start()
 
-	ticker := time.NewTicker(1 * time.Second)
+	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()
 
-	for {
-		select {
-		case <-ticker.C:
-			ps.Update()
+	var last time.Time
+	for t := range ticker.C {
+		delta := time.Second
+		if !last.IsZero() {
+			delta = t.Sub(last)
+		}
+		last = t
 
-			if ps.HasEnded() {
-				log.Println("State cycle completed.")
-				return
-			}
+		ps.Update(delta)
+
+		if ps.HasEnded() {
+			log.Println("State cycle completed.")
+			return
 		}
 	}
 }

@@ -8,6 +8,7 @@ import (
 	"github.com/josscoder/fsmgo/state"
 )
 
+// Series plays states one after another, advancing automatically when each one ends.
 func main() {
 	series := state.NewStateSeries([]state.State{
 		states.NewPrintState("State 1"),
@@ -16,18 +17,22 @@ func main() {
 
 	series.Start()
 
-	ticker := time.NewTicker(1 * time.Second)
+	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()
 
-	for {
-		select {
-		case <-ticker.C:
-			series.Update()
+	var last time.Time
+	for t := range ticker.C {
+		delta := time.Second
+		if !last.IsZero() {
+			delta = t.Sub(last)
+		}
+		last = t
 
-			if series.HasEnded() {
-				log.Println("Sequential state series ended")
-				return
-			}
+		series.Update(delta)
+
+		if series.HasEnded() {
+			log.Println("Sequential state series ended.")
+			return
 		}
 	}
 }
