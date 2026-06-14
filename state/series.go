@@ -31,13 +31,13 @@ func (s *Series) OnStart() {
 	}
 }
 
-func (s *Series) OnUpdate() {
+func (s *Series) OnUpdate(delta time.Duration) {
 	curr := s.Current()
 	if curr == nil {
 		return
 	}
 
-	curr.Update(0)
+	curr.Update(delta)
 
 	s.skipMu.Lock()
 	skip := s.skipping

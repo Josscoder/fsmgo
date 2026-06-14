@@ -23,9 +23,9 @@ func (g *Group) OnStart() {
 }
 
 // OnUpdate ticks every child, then ends the group when all children are done.
-func (g *Group) OnUpdate() {
+func (g *Group) OnUpdate(delta time.Duration) {
 	for _, st := range g.states {
-		st.Update(0)
+		st.Update(delta)
 	}
 	if g.IsReadyToEnd() {
 		g.End()
