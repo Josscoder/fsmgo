@@ -9,7 +9,7 @@ import (
 // Lifecycle defines the hooks a concrete state must implement.
 type Lifecycle interface {
 	OnStart()
-	OnUpdate(delta time.Duration)
+	OnUpdate()
 	OnEnd()
 	GetDuration() time.Duration
 }
@@ -123,7 +123,7 @@ func (s *BaseState) Update(delta time.Duration) {
 		return
 	}
 
-	safeCall("Update", func() { s.lifecycle.OnUpdate(delta) })
+	safeCall("Update", s.lifecycle.OnUpdate)
 }
 
 func (s *BaseState) End() {

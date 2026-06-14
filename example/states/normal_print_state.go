@@ -22,9 +22,9 @@ func (ps *PrintState) OnStart() {
 	fmt.Println("Started:", ps.Text)
 }
 
-func (ps *PrintState) OnUpdate(delta time.Duration) {
-	fmt.Printf("Updating: %s | remaining: %v | delta: %v\n",
-		ps.Text, ps.GetRemainingTime().Round(time.Millisecond), delta)
+func (ps *PrintState) OnUpdate() {
+	fmt.Printf("Updating: %s | remaining: %v\n",
+		ps.Text, ps.GetRemainingTime().Round(time.Millisecond))
 }
 
 func (ps *PrintState) OnEnd() {

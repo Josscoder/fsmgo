@@ -37,19 +37,10 @@ func (s *ScheduledStateSeries) loop(ctx context.Context) {
 	ticker := time.NewTicker(s.interval)
 	defer ticker.Stop()
 
-	var last time.Time
 	for {
 		select {
-		case t := <-ticker.C:
-			delta := s.interval
-			if !last.IsZero() {
-				delta = t.Sub(last) // real elapsed time, absorbs jitter
-			}
-			last = t
-			// Call the public Update so BaseState guards (started, ended,
-			// updating) are respected — never bypass them.
-			s.Update(delta)
-
+		case <-ticker.C:
+			s.Update(s.interval)
 		case <-ctx.Done():
 			return
 		}

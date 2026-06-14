@@ -29,9 +29,9 @@ func (h *Holder) OnStart() {
 	}
 }
 
-func (h *Holder) OnUpdate(delta time.Duration) {
+func (h *Holder) OnUpdate() {
 	if curr := h.Current(); curr != nil {
-		curr.Update(delta)
+		curr.Update(0)
 	}
 }
 
